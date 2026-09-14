@@ -1,0 +1,575 @@
+openapi: 3.0.3
+info:
+  title: GhostLane
+  version: 0.1.0
+  description: >-
+    Motion-anticipation service for V2X and mobile robots that predicts trajectories under late, dropped, or shifted IoT broadcasts.
+  x-product-slug: ai-iot-ghostlane
+  x-source: ai-in-iot/1801.01444v2/
+servers:
+  - url: https://api.example.com
+tags:
+  - name: Agents
+    description: Vehicle and robot agent registry
+  - name: Broadcasts
+    description: Normalized object broadcast ingest
+  - name: Tracks
+    description: Anticipated tracks and confidence
+  - name: NoiseReports
+    description: Latency/miss/shift diagnostics
+  - name: FusionPolicies
+    description: Predict/correct fusion policies
+  - name: ModelProfiles
+    description: RNN anticipator profiles
+  - name: Incidents
+    description: Safety incident replays
+paths:
+
+  /v1/agents:
+    get:
+      operationId: listAgents
+      tags: [Agents]
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Agents
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEnvelopeAgent"
+    post:
+      operationId: registerAgent
+      tags: [Agents]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AgentCreate"
+      responses:
+        "201":
+          description: Agent registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeAgent"
+  /v1/broadcasts:
+    post:
+      operationId: ingestBroadcast
+      tags: [Broadcasts]
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ObjectBroadcast"
+      responses:
+        "202":
+          description: Broadcast accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeObjectBroadcast"
+  /v1/tracks:
+    get:
+      operationId: listTracks
+      tags: [Tracks]
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      parameters:
+        - name: agentId
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Anticipated tracks
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEnvelopeAnticipatedTrack"
+  /v1/tracks/anticipate:
+    post:
+      operationId: anticipateTracks
+      tags: [Tracks]
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [agentId, horizonMs]
+              properties:
+                agentId: { type: string }
+                horizonMs: { type: integer }
+      responses:
+        "200":
+          description: Anticipation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEnvelopeAnticipatedTrack"
+  /v1/noise-reports:
+    get:
+      operationId: listNoiseReports
+      tags: [NoiseReports]
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Noise reports
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEnvelopeNoiseReport"
+    post:
+      operationId: submitNoiseReport
+      tags: [NoiseReports]
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NoiseReport"
+      responses:
+        "201":
+          description: Noise report recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeNoiseReport"
+  /v1/fusion-policies:
+    get:
+      operationId: listFusionPolicies
+      tags: [FusionPolicies]
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Fusion policies
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEnvelopeFusionPolicy"
+    post:
+      operationId: upsertFusionPolicy
+      tags: [FusionPolicies]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FusionPolicy"
+      responses:
+        "200":
+          description: Policy saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeFusionPolicy"
+  /v1/model-profiles:
+    get:
+      operationId: listModelProfiles
+      tags: [ModelProfiles]
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Model profiles
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEnvelopeModelProfile"
+    post:
+      operationId: publishModelProfile
+      tags: [ModelProfiles]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ModelProfile"
+      responses:
+        "201":
+          description: Profile published
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeModelProfile"
+  /v1/incidents:
+    get:
+      operationId: listIncidents
+      tags: [Incidents]
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Incidents
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEnvelopeIncidentReplay"
+    post:
+      operationId: storeIncidentReplay
+      tags: [Incidents]
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IncidentReplayCreate"
+      responses:
+        "201":
+          description: Incident stored
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeIncidentReplay"
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    Cursor:
+      name: cursor
+      in: query
+      schema:
+        type: string
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+  responses:
+    Unauthorized:
+      description: Missing or invalid credentials
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    UnprocessableEntity:
+      description: Validation failed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+  schemas:
+    ResponseMeta:
+      type: object
+      required: [requestId, timestamp]
+      properties:
+        requestId:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+
+    Agent:
+      type: object
+      required: [id, agentType, status]
+      properties:
+        id: { type: string }
+        agentType: { type: string, enum: [vehicle, robot, rsu] }
+        status: { type: string, enum: [active, degraded, offline] }
+        fleetId: { type: string }
+    AgentCreate:
+      type: object
+      required: [agentType]
+      properties:
+        agentType: { type: string, enum: [vehicle, robot, rsu] }
+        fleetId: { type: string }
+        ecuClass: { type: string }
+    ObjectBroadcast:
+      type: object
+      required: [agentId, objectId, observedAt]
+      properties:
+        id: { type: string }
+        agentId: { type: string }
+        objectId: { type: string }
+        observedAt: { type: string, format: date-time }
+        position:
+          type: object
+          additionalProperties: { type: number }
+        velocity:
+          type: object
+          additionalProperties: { type: number }
+        latencyMs: { type: integer }
+    AnticipatedTrack:
+      type: object
+      required: [id, agentId, objectId, confidence]
+      properties:
+        id: { type: string }
+        agentId: { type: string }
+        objectId: { type: string }
+        confidence: { type: number, format: float }
+        source: { type: string, enum: [measured, predicted, fused] }
+        horizonMs: { type: integer }
+        predictedAt: { type: string, format: date-time }
+    NoiseReport:
+      type: object
+      required: [agentId, noiseMode]
+      properties:
+        id: { type: string }
+        agentId: { type: string }
+        noiseMode: { type: string, enum: [latency, miss, shift, clean] }
+        missRate: { type: number, format: float }
+        medianLatencyMs: { type: integer }
+        shiftMagnitude: { type: number, format: float }
+        reportedAt: { type: string, format: date-time }
+    FusionPolicy:
+      type: object
+      required: [id, agentId, predictionTrustBias]
+      properties:
+        id: { type: string }
+        agentId: { type: string }
+        predictionTrustBias: { type: number, format: float }
+        failSafeThreshold: { type: number, format: float }
+        maxBlindIntervalMs: { type: integer }
+    ModelProfile:
+      type: object
+      required: [id, version, parameterCount]
+      properties:
+        id: { type: string }
+        version: { type: string }
+        parameterCount: { type: integer }
+        targetEcuClass: { type: string }
+        status: { type: string, enum: [candidate, production, retired] }
+    IncidentReplayCreate:
+      type: object
+      required: [agentId, startedAt, endedAt]
+      properties:
+        agentId: { type: string }
+        startedAt: { type: string, format: date-time }
+        endedAt: { type: string, format: date-time }
+        trigger: { type: string, enum: [fail_safe, near_miss, operator] }
+        artifactUri: { type: string }
+    IncidentReplay:
+      type: object
+      required: [id, agentId, status]
+      properties:
+        id: { type: string }
+        agentId: { type: string }
+        status: { type: string, enum: [stored, under_review, closed] }
+        trigger: { type: string }
+        startedAt: { type: string, format: date-time }
+        endedAt: { type: string, format: date-time }
+
+    DataEnvelopeAgent:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/Agent"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    ListEnvelopeAgent:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/Agent"
+            nextCursor:
+              type: string
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+    DataEnvelopeObjectBroadcast:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/ObjectBroadcast"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    ListEnvelopeObjectBroadcast:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/ObjectBroadcast"
+            nextCursor:
+              type: string
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+    DataEnvelopeAnticipatedTrack:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/AnticipatedTrack"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    ListEnvelopeAnticipatedTrack:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/AnticipatedTrack"
+            nextCursor:
+              type: string
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+    DataEnvelopeNoiseReport:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/NoiseReport"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    ListEnvelopeNoiseReport:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/NoiseReport"
+            nextCursor:
+              type: string
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+    DataEnvelopeFusionPolicy:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/FusionPolicy"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    ListEnvelopeFusionPolicy:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/FusionPolicy"
+            nextCursor:
+              type: string
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+    DataEnvelopeModelProfile:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/ModelProfile"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    ListEnvelopeModelProfile:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/ModelProfile"
+            nextCursor:
+              type: string
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+    DataEnvelopeIncidentReplay:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/IncidentReplay"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    ListEnvelopeIncidentReplay:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/IncidentReplay"
+            nextCursor:
+              type: string
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
